@@ -1,0 +1,63 @@
+# 中文语言文件
+# Chinese Language File
+
+# 插件消息
+plugin:
+  enabled: "&a[KillReward] 插件已启用！版本: {version}"
+  disabled: "&c[KillReward] 插件已禁用！"
+  reloaded: "&a[KillReward] 配置文件已重新加载！"
+  no_permission: "&c你没有权限执行此命令！"
+  player_only: "&c此命令只能由玩家执行！"
+  invalid_command: "&c无效的命令！使用 /killreward help 查看帮助。"
+
+# 经济系统消息
+economy:
+  not_found: "&c未找到经济插件！请安装 Vault 和经济插件。"
+  insufficient_funds: "&c目标玩家余额不足，无法获得奖励。"
+  transaction_failed: "&c交易失败！请联系管理员。"
+
+# 奖励消息
+reward:
+  kill_monster: "&a击杀怪物获得奖励: &e{amount}{symbol}"
+  kill_animal: "&a击杀动物获得奖励: &e{amount}{symbol}"
+  kill_neutral: "&a击杀中立生物获得奖励: &e{amount}{symbol}"
+  kill_player: "&a击杀玩家 &e{player} &a获得奖励: &e{amount}{symbol} &7({percentage})"
+  kill_specific: "&a击杀 &e{entity} &a获得奖励: &e{amount}{symbol}"
+  player_killed_by: "&c你被 &e{killer} &c击杀，损失了 &e{amount}{symbol} &7({percentage})"
+
+# 命令帮助
+commands:
+  help:
+    header: "&6========== KillReward 帮助 =========="
+    reload: "&e/killreward reload &7- 重新加载配置文件"
+    help: "&e/killreward help &7- 显示此帮助信息"
+    footer: "&6===================================="
+
+# 控制台消息
+console:
+  loading_config: "正在加载配置文件..."
+  config_loaded: "配置文件加载完成！"
+  loading_language: "正在加载语言文件: {language}"
+  language_loaded: "语言文件加载完成！"
+  hooking_vault: "正在连接 Vault..."
+  vault_hooked: "成功连接到 Vault！"
+  vault_failed: "连接 Vault 失败！"
+  economy_found: "找到经济插件: {plugin}"
+  economy_not_found: "未找到经济插件！"
+  registering_events: "正在注册事件监听器..."
+  events_registered: "事件监听器注册完成！"
+  plugin_ready: "插件准备就绪！"
+
+# 错误消息
+error:
+  config_load_failed: "配置文件加载失败: {error}"
+  language_load_failed: "语言文件加载失败: {error}"
+  reward_calculation_failed: "奖励计算失败: {error}"
+  database_error: "数据库错误: {error}"
+
+# 调试消息
+debug:
+  entity_killed: "实体被击杀: {entity} 由 {killer}"
+  reward_calculated: "计算奖励: {amount} 给 {player}"
+  world_check: "世界检查: {world} - 启用: {enabled}"
+  permission_check: "权限检查: {player} - {permission}: {result}"

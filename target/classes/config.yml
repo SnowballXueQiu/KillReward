@@ -1,0 +1,64 @@
+# KillReward Plugin Configuration
+# Author: Snowball_233
+
+# Language setting (zh_CN, en_US)
+language: zh_CN
+
+# Enable debug mode
+debug: false
+
+# Reward settings for different entity types
+rewards:
+  # Monster rewards (zombies, skeletons, creepers, etc.)
+  MONSTER:
+    enabled: true
+    range:
+      min: 1
+      max: 10
+  
+  # Animal rewards (cows, pigs, chickens, etc.)
+  ANIMAL:
+    enabled: true
+    range:
+      min: 5
+      max: 15
+  
+  # Neutral mob rewards (endermen, spiders in daylight, etc.)
+  NEUTRAL:
+    enabled: true
+    range:
+      min: 3
+      max: 8
+  
+  # Player kill rewards (percentage of victim's balance)
+  PLAYER:
+    enabled: true
+    percentage: "25%"
+    # Minimum amount to steal (if victim has less than this, no reward)
+    minimum_balance: 100.0
+    # Maximum amount that can be stolen in one kill
+    maximum_steal: 1000.0
+
+# Specific entity overrides (optional)
+# These will override the category settings above
+specific_entities:
+  # Example: Give more reward for killing ender dragon
+  ENDER_DRAGON:
+    enabled: true
+    range:
+      min: 100
+      max: 500
+  
+  # Example: Give less reward for killing chickens
+  CHICKEN:
+    enabled: true
+    range:
+      min: 1
+      max: 2
+
+# World settings
+worlds:
+  # List of worlds where the plugin is active (empty = all worlds)
+  enabled_worlds: []
+  # List of worlds where the plugin is disabled
+  disabled_worlds: []

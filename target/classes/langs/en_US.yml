@@ -1,0 +1,62 @@
+# English Language File
+
+# Plugin messages
+plugin:
+  enabled: "&a[KillReward] Plugin enabled! Version: {version}"
+  disabled: "&c[KillReward] Plugin disabled!"
+  reloaded: "&a[KillReward] Configuration reloaded!"
+  no_permission: "&cYou don't have permission to execute this command!"
+  player_only: "&cThis command can only be executed by players!"
+  invalid_command: "&cInvalid command! Use /killreward help for help."
+
+# Economy system messages
+economy:
+  not_found: "&cEconomy plugin not found! Please install Vault and an economy plugin."
+  insufficient_funds: "&cTarget player has insufficient funds, no reward given."
+  transaction_failed: "&cTransaction failed! Please contact an administrator."
+
+# Reward messages
+reward:
+  kill_monster: "&aKilled monster and received reward: &e{amount}{symbol}"
+  kill_animal: "&aKilled animal and received reward: &e{amount}{symbol}"
+  kill_neutral: "&aKilled neutral mob and received reward: &e{amount}{symbol}"
+  kill_player: "&aKilled player &e{player} &aand received reward: &e{amount}{symbol} &7({percentage})"
+  kill_specific: "&aKilled &e{entity} &aand received reward: &e{amount}{symbol}"
+  player_killed_by: "&cYou were killed by &e{killer} &cand lost &e{amount}{symbol} &7({percentage})"
+
+# Command help
+commands:
+  help:
+    header: "&6========== KillReward Help =========="
+    reload: "&e/killreward reload &7- Reload configuration file"
+    help: "&e/killreward help &7- Show this help message"
+    footer: "&6====================================="
+
+# Console messages
+console:
+  loading_config: "Loading configuration file..."
+  config_loaded: "Configuration file loaded successfully!"
+  loading_language: "Loading language file: {language}"
+  language_loaded: "Language file loaded successfully!"
+  hooking_vault: "Hooking into Vault..."
+  vault_hooked: "Successfully hooked into Vault!"
+  vault_failed: "Failed to hook into Vault!"
+  economy_found: "Economy plugin found: {plugin}"
+  economy_not_found: "No economy plugin found!"
+  registering_events: "Registering event listeners..."
+  events_registered: "Event listeners registered successfully!"
+  plugin_ready: "Plugin is ready!"
+
+# Error messages
+error:
+  config_load_failed: "Failed to load configuration: {error}"
+  language_load_failed: "Failed to load language file: {error}"
+  reward_calculation_failed: "Failed to calculate reward: {error}"
+  database_error: "Database error: {error}"
+
+# Debug messages
+debug:
+  entity_killed: "Entity killed: {entity} by {killer}"
+  reward_calculated: "Reward calculated: {amount} for {player}"
+  world_check: "World check: {world} - Enabled: {enabled}"
+  permission_check: "Permission check: {player} - {permission}: {result}"
