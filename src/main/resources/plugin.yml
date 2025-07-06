@@ -21,3 +21,6 @@ permissions:
   killreward.receive:
     description: Allows receiving kill rewards
     default: true
+  kr.reload:
+    description: Allows reloading the plugin configuration
+    default: op

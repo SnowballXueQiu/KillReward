@@ -17,7 +17,7 @@ class KillRewardCommand(private val plugin: KillRewardPlugin) : CommandExecutor,
         
         when (args[0].lowercase()) {
             "reload" -> {
-                if (!sender.hasPermission("killreward.admin")) {
+                if (!sender.hasPermission("kr.reload")) {
                     plugin.messageManager.sendMessage(sender as? Player ?: return true, "plugin.no_permission")
                     return true
                 }
@@ -48,7 +48,7 @@ class KillRewardCommand(private val plugin: KillRewardPlugin) : CommandExecutor,
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> {
         if (args.size == 1) {
             val subcommands = mutableListOf("help", "info", "version")
-            if (sender.hasPermission("killreward.admin")) {
+            if (sender.hasPermission("kr.reload")) {
                 subcommands.add("reload")
             }
             return subcommands.filter { it.startsWith(args[0].lowercase()) }
