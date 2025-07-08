@@ -7,9 +7,24 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDeathEvent
+import org.bukkit.scheduler.BukkitRunnable
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 
 class EntityDeathListener(private val plugin: KillRewardPlugin) : Listener {
+    
+    private val rewardQueue = ConcurrentHashMap<Player, Double>()
+    private val killCounts = ConcurrentHashMap<Player, Int>()
+    private val lastKillTime = ConcurrentHashMap<Player, Long>()
+    
+    init {
+        // 定期处理奖励队列，延长处理间隔到30秒
+        object : BukkitRunnable() {
+            override fun run() {
+                processRewardQueue()
+            }
+        }.runTaskTimerAsynchronously(plugin, 600L, 600L) // 30秒处理一次
+    }
     
     @EventHandler(priority = EventPriority.NORMAL)
     fun onEntityDeath(event: EntityDeathEvent) {
@@ -30,23 +45,75 @@ class EntityDeathListener(private val plugin: KillRewardPlugin) : Listener {
             return
         }
         
-        // 调试信息
-        plugin.messageManager.sendDebugMessage("entity_killed", mapOf(
-            "entity" to victim.type.name,
-            "killer" to killer.name
-        ))
-        
-        // 检查经济系统是否可用
-        if (!plugin.economyManager.isEconomyAvailable()) {
-            plugin.messageManager.sendMessage(killer, "economy.not_found")
+        // 检查击杀频率
+        if (isKillRateExcessive(killer)) {
+            plugin.messageManager.sendDebugMessage("kill_rate_excessive", mapOf(
+                "player" to killer.name
+            ))
             return
         }
         
-        // 处理不同类型的实体
-        when (victim.type.name) {
-            "PLAYER" -> handlePlayerKill(killer, victim as Player)
-            else -> handleEntityKill(killer, victim.type)
+        // 更新击杀统计
+        updateKillStats(killer)
+        
+        // 处理击杀奖励
+        if (victim is Player) {
+            handlePlayerKill(killer, victim)
+        } else {
+            handleEntityKill(killer, victim.type)
         }
+    }
+    
+    private fun isKillRateExcessive(player: Player): Boolean {
+        val currentTime = System.currentTimeMillis()
+        val lastTime = lastKillTime.getOrDefault(player, 0L)
+        val timeDiff = currentTime - lastTime
+        
+        // 如果在1秒内击杀超过5次，认为是刷怪塔
+        return killCounts.getOrDefault(player, 0) >= 5 && timeDiff <= 1000
+    }
+    
+    private fun updateKillStats(player: Player) {
+        val currentTime = System.currentTimeMillis()
+        val lastTime = lastKillTime.getOrDefault(player, 0L)
+        
+        if (currentTime - lastTime > 1000) {
+            // 重置计数
+            killCounts.put(player, 1)
+        } else {
+            // 增加计数
+            killCounts.merge(player, 1) { old, _ -> old + 1 }
+        }
+        
+        lastKillTime.put(player, currentTime)
+    }
+    
+    private fun processRewardQueue() {
+        if (rewardQueue.isEmpty()) return
+        
+        // 完全异步处理奖励
+        object : BukkitRunnable() {
+            override fun run() {
+                val iterator = rewardQueue.entries.iterator()
+                while (iterator.hasNext()) {
+                    val (player, amount) = iterator.next()
+                    if (player.isOnline) {
+                        val success = plugin.economyManager.deposit(player, amount)
+                        if (success) {
+                            // 在主线程发送消息
+                            object : BukkitRunnable() {
+                                override fun run() {
+                                    plugin.messageManager.sendMessage(player, "reward.batch_received", mapOf(
+                                        "amount" to plugin.economyManager.formatCurrency(amount)
+                                    ))
+                                }
+                            }.runTask(plugin)
+                        }
+                    }
+                    iterator.remove()
+                }
+            }
+        }.runTaskAsynchronously(plugin)
     }
     
     private fun handlePlayerKill(killer: Player, victim: Player) {
@@ -67,34 +134,7 @@ class EntityDeathListener(private val plugin: KillRewardPlugin) : Listener {
             return
         }
         
-        // 执行转账
-        val transferSuccess = plugin.economyManager.transfer(victim, killer, rewardAmount)
-        
-        if (transferSuccess) {
-            // 发送成功消息给击杀者
-            plugin.messageManager.sendMessage(killer, "reward.kill_player", mapOf(
-                "player" to victim.name,
-                "amount" to plugin.economyManager.formatCurrency(rewardAmount),
-                "symbol" to "",
-                "percentage" to "${percentage}%"
-            ))
-            
-            // 发送失去金钱消息给被击杀者
-            plugin.messageManager.sendMessage(victim, "reward.player_killed_by", mapOf(
-                "killer" to killer.name,
-                "amount" to plugin.economyManager.formatCurrency(rewardAmount),
-                "symbol" to "",
-                "percentage" to "${percentage}%"
-            ))
-            
-            // 调试信息
-            plugin.messageManager.sendDebugMessage("reward_calculated", mapOf(
-                "amount" to rewardAmount,
-                "player" to killer.name
-            ))
-        } else {
-            plugin.messageManager.sendMessage(killer, "economy.transaction_failed")
-        }
+        queueReward(killer, rewardAmount)
     }
     
     private fun handleEntityKill(killer: Player, entityType: org.bukkit.entity.EntityType) {
@@ -102,7 +142,7 @@ class EntityDeathListener(private val plugin: KillRewardPlugin) : Listener {
         val specificReward = plugin.configManager.getSpecificEntityReward(entityType)
         if (specificReward != null) {
             val rewardAmount = calculateReward(specificReward.first, specificReward.second)
-            giveReward(killer, rewardAmount, "reward.kill_specific", mapOf("entity" to entityType.name))
+            queueReward(killer, rewardAmount)
             return
         }
         
@@ -113,27 +153,17 @@ class EntityDeathListener(private val plugin: KillRewardPlugin) : Listener {
                 if (plugin.configManager.isMonsterRewardEnabled()) {
                     val range = plugin.configManager.getMonsterRewardRange()
                     val rewardAmount = calculateReward(range.first, range.second)
-                    giveReward(killer, rewardAmount, "reward.kill_monster")
+                    queueReward(killer, rewardAmount)
                 }
             }
             ConfigManager.EntityCategory.ANIMAL -> {
                 if (plugin.configManager.isAnimalRewardEnabled()) {
                     val range = plugin.configManager.getAnimalRewardRange()
                     val rewardAmount = calculateReward(range.first, range.second)
-                    giveReward(killer, rewardAmount, "reward.kill_animal")
+                    queueReward(killer, rewardAmount)
                 }
             }
-            ConfigManager.EntityCategory.NEUTRAL -> {
-                if (plugin.configManager.isNeutralRewardEnabled()) {
-                    val range = plugin.configManager.getNeutralRewardRange()
-                    val rewardAmount = calculateReward(range.first, range.second)
-                    giveReward(killer, rewardAmount, "reward.kill_neutral")
-                }
-            }
-            else -> {
-                // 其他类型的实体不给予奖励
-                return
-            }
+            else -> return
         }
     }
     
@@ -145,25 +175,7 @@ class EntityDeathListener(private val plugin: KillRewardPlugin) : Listener {
         }
     }
     
-    private fun giveReward(player: Player, amount: Double, messageKey: String, extraPlaceholders: Map<String, Any> = emptyMap()) {
-        val success = plugin.economyManager.deposit(player, amount)
-        
-        if (success) {
-            val placeholders = mutableMapOf<String, Any>(
-                "amount" to plugin.economyManager.formatCurrency(amount),
-                "symbol" to ""
-            )
-            placeholders.putAll(extraPlaceholders)
-            
-            plugin.messageManager.sendMessage(player, messageKey, placeholders)
-            
-            // 调试信息
-            plugin.messageManager.sendDebugMessage("reward_calculated", mapOf(
-                "amount" to amount,
-                "player" to player.name
-            ))
-        } else {
-            plugin.messageManager.sendMessage(player, "economy.transaction_failed")
-        }
+    private fun queueReward(player: Player, amount: Double) {
+        rewardQueue.merge(player, amount) { old, new -> old + new }
     }
 }

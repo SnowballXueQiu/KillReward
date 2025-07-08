@@ -4,51 +4,56 @@ import cc.vastsea.killreward.KillRewardPlugin
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.entity.Player
 import org.bukkit.plugin.RegisteredServiceProvider
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 class EconomyManager(private val plugin: KillRewardPlugin) {
     
     private var economy: Economy? = null
+    private val economyLock = ReentrantLock()
     
     fun setupEconomy(): Boolean {
-        if (plugin.server.pluginManager.getPlugin("Vault") == null) {
-            plugin.logger.severe("Vault plugin not found!")
-            return false
+        economyLock.withLock {
+            if (plugin.server.pluginManager.getPlugin("Vault") == null) {
+                plugin.logger.severe("Vault plugin not found!")
+                return false
+            }
+            
+            plugin.logger.info("Hooking into Vault...")
+            
+            val rsp: RegisteredServiceProvider<Economy>? = plugin.server.servicesManager.getRegistration(Economy::class.java)
+            if (rsp == null) {
+                plugin.logger.severe("No economy plugin found!")
+                return false
+            }
+            
+            economy = rsp.provider
+            plugin.logger.info("Successfully hooked into Vault!")
+            plugin.logger.info("Economy plugin found: ${economy?.name ?: "Unknown"}")
+            
+            return economy != null
         }
-        
-        plugin.logger.info("Hooking into Vault...")
-        
-        val rsp: RegisteredServiceProvider<Economy>? = plugin.server.servicesManager.getRegistration(Economy::class.java)
-        if (rsp == null) {
-            plugin.logger.severe("No economy plugin found!")
-            return false
-        }
-        
-        economy = rsp.provider
-        plugin.logger.info("Successfully hooked into Vault!")
-        plugin.logger.info("Economy plugin found: ${economy?.name ?: "Unknown"}")
-        
-        return economy != null
     }
     
-    fun getBalance(player: Player): Double {
+    fun getBalance(player: Player): Double = economyLock.withLock {
         return economy?.getBalance(player) ?: 0.0
     }
     
-    fun hasEnough(player: Player, amount: Double): Boolean {
+    fun hasEnough(player: Player, amount: Double): Boolean = economyLock.withLock {
         return economy?.has(player, amount) ?: false
     }
     
-    fun deposit(player: Player, amount: Double): Boolean {
+    fun deposit(player: Player, amount: Double): Boolean = economyLock.withLock {
         val response = economy?.depositPlayer(player, amount)
         return response?.transactionSuccess() ?: false
     }
     
-    fun withdraw(player: Player, amount: Double): Boolean {
+    fun withdraw(player: Player, amount: Double): Boolean = economyLock.withLock {
         val response = economy?.withdrawPlayer(player, amount)
         return response?.transactionSuccess() ?: false
     }
     
-    fun transfer(from: Player, to: Player, amount: Double): Boolean {
+    fun transfer(from: Player, to: Player, amount: Double): Boolean = economyLock.withLock {
         if (!hasEnough(from, amount)) {
             return false
         }
@@ -68,7 +73,7 @@ class EconomyManager(private val plugin: KillRewardPlugin) {
         return true
     }
     
-    fun calculatePlayerReward(victim: Player, percentage: Double, minimumBalance: Double, maximumSteal: Double): Double {
+    fun calculatePlayerReward(victim: Player, percentage: Double, minimumBalance: Double, maximumSteal: Double): Double = economyLock.withLock {
         val victimBalance = getBalance(victim)
         
         // 检查最小余额要求
@@ -83,15 +88,15 @@ class EconomyManager(private val plugin: KillRewardPlugin) {
         return minOf(calculatedAmount, maximumSteal)
     }
     
-    fun isEconomyAvailable(): Boolean {
+    fun isEconomyAvailable(): Boolean = economyLock.withLock {
         return economy != null
     }
     
-    fun getEconomyName(): String {
+    fun getEconomyName(): String = economyLock.withLock {
         return economy?.name ?: "None"
     }
     
-    fun formatCurrency(amount: Double): String {
+    fun formatCurrency(amount: Double): String = economyLock.withLock {
         return economy?.format(amount) ?: plugin.messageManager.formatCurrency(amount)
     }
 }
