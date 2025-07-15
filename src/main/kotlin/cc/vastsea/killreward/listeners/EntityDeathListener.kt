@@ -72,7 +72,7 @@ class EntityDeathListener(private val plugin: KillRewardPlugin) : Listener {
         
         if (transferSuccess) {
             // 发送成功消息给击杀者
-            plugin.messageManager.sendMessage(killer, "reward.kill_player", mapOf(
+            plugin.messageManager.sendActionBar(killer, "reward.kill_player", mapOf(
                 "player" to victim.name,
                 "amount" to plugin.economyManager.formatCurrency(rewardAmount),
                 "symbol" to "",
@@ -80,7 +80,7 @@ class EntityDeathListener(private val plugin: KillRewardPlugin) : Listener {
             ))
             
             // 发送失去金钱消息给被击杀者
-            plugin.messageManager.sendMessage(victim, "reward.player_killed_by", mapOf(
+            plugin.messageManager.sendActionBar(victim, "reward.player_killed_by", mapOf(
                 "killer" to killer.name,
                 "amount" to plugin.economyManager.formatCurrency(rewardAmount),
                 "symbol" to "",
@@ -155,7 +155,7 @@ class EntityDeathListener(private val plugin: KillRewardPlugin) : Listener {
             )
             placeholders.putAll(extraPlaceholders)
             
-            plugin.messageManager.sendMessage(player, messageKey, placeholders)
+            plugin.messageManager.sendActionBar(player, messageKey, placeholders)
             
             // 调试信息
             plugin.messageManager.sendDebugMessage("reward_calculated", mapOf(
